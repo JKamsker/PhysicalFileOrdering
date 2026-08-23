@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFrameworks>net8.0;net10.0</TargetFrameworks>
+    <AssemblyName>PhysicalFileOrdering</AssemblyName>
+    <RootNamespace>PhysicalFileOrdering</RootNamespace>
+    <Description>Cross-platform physical file ordering for reducing seek overhead on mechanical disks.</Description>
+    <PackageId>PhysicalFileOrdering</PackageId>
+    <PackageVersion>0.1.0</PackageVersion>
+    <Authors>Jonas Kamsker</Authors>
+    <PackageTags>filesystem;hdd;io;performance;fiemap;ntfs;apfs</PackageTags>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <RepositoryType>git</RepositoryType>
+    <RepositoryUrl>https://github.com/JKamsker/PhysicalFileOrdering</RepositoryUrl>
+    <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
+    <IsPackable>true</IsPackable>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="../../README.md" Pack="true" PackagePath="/" />
+  </ItemGroup>
+</Project>
