@@ -120,6 +120,9 @@ internal static class MacOsLog2Phys
         }
     }
 
-    [DllImport("libSystem.B.dylib", SetLastError = true)]
+    // The public fcntl symbol is variadic. On Apple Silicon, its variadic third
+    // argument uses a different ABI from a fixed P/Invoke argument. __fcntl is
+    // libSystem's non-variadic entry point and safely accepts the native buffer.
+    [DllImport("libSystem", EntryPoint = "__fcntl", SetLastError = true)]
     private static extern int fcntl(int fd, int command, IntPtr argument);
 }
