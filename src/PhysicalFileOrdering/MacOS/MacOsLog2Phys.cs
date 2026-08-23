@@ -35,18 +35,36 @@ internal static class MacOsLog2Phys
             FileShare.ReadWrite | FileShare.Delete);
 
         int fd = handle.DangerousGetHandle().ToInt32();
+        long fileLength = RandomAccess.GetLength(handle);
+        long logicalOffset = 0;
 
-        var info = new Log2Phys
+        while (logicalOffset < fileLength)
         {
-            Flags = 0,
-            ContiguousBytes = 1,
-            DeviceOffset = 0 // input: byte offset into file
-        };
+            var info = new Log2Phys
+            {
+                Flags = 0,
+                ContiguousBytes = fileLength - logicalOffset,
+                DeviceOffset = logicalOffset
+            };
 
-        if (fcntl(fd, FLog2PhysExt, ref info) == -1 || info.DeviceOffset < 0)
-            return new FilePlacement(volumeId, null, approximate);
+            if (fcntl(fd, FLog2PhysExt, ref info) == -1 || info.ContiguousBytes <= 0)
+                return new FilePlacement(volumeId, null, approximate);
 
-        return new FilePlacement(volumeId, checked((ulong)info.DeviceOffset), approximate);
+            if (info.DeviceOffset >= 0)
+            {
+                return new FilePlacement(
+                    volumeId,
+                    checked((ulong)info.DeviceOffset),
+                    approximate);
+            }
+
+            if (logicalOffset > long.MaxValue - info.ContiguousBytes)
+                return new FilePlacement(volumeId, null, approximate);
+
+            logicalOffset += info.ContiguousBytes;
+        }
+
+        return new FilePlacement(volumeId, null, approximate);
     }
 
     [DllImport("libSystem.B.dylib", SetLastError = true)]

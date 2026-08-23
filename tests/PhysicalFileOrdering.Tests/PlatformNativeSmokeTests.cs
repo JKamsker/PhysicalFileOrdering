@@ -1,3 +1,4 @@
+using System.Security.Cryptography;
 using PhysicalFileOrdering.MacOS;
 using PhysicalFileOrdering.Windows;
 
@@ -45,7 +46,11 @@ public sealed class PlatformNativeSmokeTests
             Path = System.IO.Path.Combine(
                 System.IO.Path.GetTempPath(),
                 $"PhysicalFileOrdering-{Guid.NewGuid():N}.bin");
-            File.WriteAllBytes(Path, new byte[4096]);
+
+            byte[] contents = RandomNumberGenerator.GetBytes(64 * 1024);
+            using var stream = new FileStream(Path, FileMode.CreateNew, FileAccess.Write, FileShare.None);
+            stream.Write(contents);
+            stream.Flush(flushToDisk: true);
         }
 
         public string Path { get; }
