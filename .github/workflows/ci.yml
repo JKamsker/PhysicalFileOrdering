@@ -50,6 +50,9 @@ jobs:
           find TestResults -type f -print
           find TestResults -type f -name 'Sequence*.xml' -exec cat {} \;
           find "$HOME/Library/Logs/DiagnosticReports" -type f -print -exec cat {} \; 2>/dev/null || true
+          dotnet tool install dotnet-dump --tool-path .diagnostic-tools
+          dump_file=$(find TestResults -type f -name '*.dmp' | head -1)
+          .diagnostic-tools/dotnet-dump analyze "$dump_file" -c "threads" -c "clrstack -all" -c "exit"
 
       - name: Pack library
         run: dotnet pack src/PhysicalFileOrdering/PhysicalFileOrdering.csproj --configuration Release --no-build --output artifacts
