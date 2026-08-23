@@ -42,7 +42,13 @@ jobs:
         run: dotnet test --framework net8.0 --configuration Release --no-build --logger "trx;LogFileName=tests-net8.trx" --results-directory TestResults
 
       - name: Test .NET 10
-        run: dotnet test --framework net10.0 --configuration Release --no-build --logger "trx;LogFileName=tests-net10.trx" --results-directory TestResults
+        run: dotnet test --framework net10.0 --configuration Release --no-build --logger "trx;LogFileName=tests-net10.trx" --results-directory TestResults --blame-crash
+
+      - name: Show macOS crash diagnostics
+        if: failure() && runner.os == 'macOS'
+        run: |
+          find TestResults -type f -print
+          find "$HOME/Library/Logs/DiagnosticReports" -type f -print -exec cat {} \; 2>/dev/null || true
 
       - name: Pack library
         run: dotnet pack src/PhysicalFileOrdering/PhysicalFileOrdering.csproj --configuration Release --no-build --output artifacts
