@@ -60,6 +60,24 @@ placement there.
 See [how it works](docs/how-it-works.md) for the algorithm and tradeoffs, and
 [platform notes](docs/platform-support.md) for provider-specific details.
 
+## Measured performance
+
+In one anonymized real-world benchmark on a large external SATA rotating-disk
+array, physical ordering reduced median read time by **7.21%** compared with a
+random file order. Each of six passes read a different set of at least 16 GiB,
+for about 96 GiB total, so no file data was reused between measured passes.
+
+| Order | Runs | Median throughput | Normalized time per 16 GiB |
+| --- | ---: | ---: | ---: |
+| Random | 3 | 242.55 MiB/s | 67.549 s |
+| Physical | 3 | 261.39 MiB/s | 62.681 s |
+
+This is a measurement from one HDD-based system, not a universal performance
+guarantee. Storage layout, fragmentation, filesystem behavior, RAID mapping,
+and workload can change the result. See the
+[anonymized benchmark report](docs/benchmark-report.md) for the methodology,
+raw results, and limitations.
+
 ## Build and test
 
 Install the .NET 10 SDK, then run:
