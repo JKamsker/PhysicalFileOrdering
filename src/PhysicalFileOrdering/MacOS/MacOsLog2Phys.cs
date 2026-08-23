@@ -7,10 +7,9 @@ internal static class MacOsLog2Phys
 {
     private const int FLog2PhysExt = 65;
 
-    // Darwin aligns off_t fields on 8-byte boundaries on supported 64-bit
-    // platforms. The default sequential packing produces the native 24-byte
-    // layout (offsets 0, 8 and 16).
-    [StructLayout(LayoutKind.Sequential)]
+    // Darwin's public fcntl.h explicitly wraps struct log2phys in
+    // #pragma pack(4), producing a 20-byte layout on 64-bit macOS.
+    [StructLayout(LayoutKind.Sequential, Pack = 4)]
     internal struct Log2Phys
     {
         public uint Flags;
