@@ -48,6 +48,7 @@ jobs:
         if: failure() && runner.os == 'macOS'
         run: |
           find TestResults -type f -print
+          find TestResults -type f -name 'Sequence*.xml' -exec cat {} \;
           find "$HOME/Library/Logs/DiagnosticReports" -type f -print -exec cat {} \; 2>/dev/null || true
 
       - name: Pack library
