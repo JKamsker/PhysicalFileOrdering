@@ -46,7 +46,9 @@ internal static class MacOsLog2Phys
     {
         const int contigBytesOffset = 4;
         const int deviceOffsetOffset = 12;
-        const int bufferSize = 20;
+        // The public structure is 20 bytes, but over-allocate to tolerate the
+        // native operation writing ABI padding on some macOS/runtime versions.
+        const int bufferSize = 32;
 
         IntPtr buffer = Marshal.AllocHGlobal(bufferSize);
 
