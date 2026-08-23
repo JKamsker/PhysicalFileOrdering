@@ -42,17 +42,7 @@ jobs:
         run: dotnet test --framework net8.0 --configuration Release --no-build --logger "trx;LogFileName=tests-net8.trx" --results-directory TestResults
 
       - name: Test .NET 10
-        run: dotnet test --framework net10.0 --configuration Release --no-build --logger "trx;LogFileName=tests-net10.trx" --results-directory TestResults --blame-crash
-
-      - name: Show macOS crash diagnostics
-        if: failure() && runner.os == 'macOS'
-        run: |
-          find TestResults -type f -print
-          find TestResults -type f -name 'Sequence*.xml' -exec cat {} \;
-          find "$HOME/Library/Logs/DiagnosticReports" -type f -print -exec cat {} \; 2>/dev/null || true
-          dotnet tool install dotnet-dump --tool-path .diagnostic-tools
-          dump_file=$(find TestResults -type f -name '*.dmp' | head -1)
-          .diagnostic-tools/dotnet-dump analyze "$dump_file" -c "threads" -c "clrstack -all" -c "exit"
+        run: dotnet test --framework net10.0 --configuration Release --no-build --logger "trx;LogFileName=tests-net10.trx" --results-directory TestResults
 
       - name: Pack library
         run: dotnet pack src/PhysicalFileOrdering/PhysicalFileOrdering.csproj --configuration Release --no-build --output artifacts
