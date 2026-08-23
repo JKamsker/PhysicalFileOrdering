@@ -36,37 +36,57 @@ internal static class MacOsLog2Phys
 
         int fd = handle.DangerousGetHandle().ToInt32();
         long fileLength = RandomAccess.GetLength(handle);
-        long logicalOffset = 0;
+        return new FilePlacement(
+            volumeId,
+            GetFirstDeviceOffset(fd, fileLength),
+            approximate);
+    }
 
-        while (logicalOffset < fileLength)
+    private static ulong? GetFirstDeviceOffset(int fd, long fileLength)
+    {
+        const int contigBytesOffset = 4;
+        const int deviceOffsetOffset = 12;
+        const int bufferSize = 20;
+
+        IntPtr buffer = Marshal.AllocHGlobal(bufferSize);
+
+        try
         {
-            var info = new Log2Phys
-            {
-                Flags = 0,
-                ContiguousBytes = fileLength - logicalOffset,
-                DeviceOffset = logicalOffset
-            };
+            long logicalOffset = 0;
 
-            if (fcntl(fd, FLog2PhysExt, ref info) == -1 || info.ContiguousBytes <= 0)
-                return new FilePlacement(volumeId, null, approximate);
-
-            if (info.DeviceOffset >= 0)
+            while (logicalOffset < fileLength)
             {
-                return new FilePlacement(
-                    volumeId,
-                    checked((ulong)info.DeviceOffset),
-                    approximate);
+                // The two off_t fields are deliberately only 4-byte aligned.
+                // Marshal.Read/WriteInt64 handle the unaligned native access.
+                Marshal.WriteInt32(buffer, 0, 0);
+                Marshal.WriteInt64(buffer, contigBytesOffset, fileLength - logicalOffset);
+                Marshal.WriteInt64(buffer, deviceOffsetOffset, logicalOffset);
+
+                if (fcntl(fd, FLog2PhysExt, buffer) == -1)
+                    return null;
+
+                long contiguousBytes = Marshal.ReadInt64(buffer, contigBytesOffset);
+                long deviceOffset = Marshal.ReadInt64(buffer, deviceOffsetOffset);
+                if (contiguousBytes <= 0)
+                    return null;
+
+                if (deviceOffset >= 0)
+                    return checked((ulong)deviceOffset);
+
+                if (logicalOffset > long.MaxValue - contiguousBytes)
+                    return null;
+
+                logicalOffset += contiguousBytes;
             }
 
-            if (logicalOffset > long.MaxValue - info.ContiguousBytes)
-                return new FilePlacement(volumeId, null, approximate);
-
-            logicalOffset += info.ContiguousBytes;
+            return null;
         }
-
-        return new FilePlacement(volumeId, null, approximate);
+        finally
+        {
+            Marshal.FreeHGlobal(buffer);
+        }
     }
 
     [DllImport("libSystem.B.dylib", SetLastError = true)]
-    private static extern int fcntl(int fd, int command, ref Log2Phys argument);
+    private static extern int fcntl(int fd, int command, IntPtr argument);
 }
