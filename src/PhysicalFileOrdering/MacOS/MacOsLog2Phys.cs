@@ -57,16 +57,16 @@ internal static class MacOsLog2Phys
             while (logicalOffset < fileLength)
             {
                 // The two off_t fields are deliberately only 4-byte aligned.
-                // Marshal.Read/WriteInt64 handle the unaligned native access.
+                // Use byte-wise helpers so the runtime never emits an aligned load.
                 Marshal.WriteInt32(buffer, 0, 0);
-                Marshal.WriteInt64(buffer, contigBytesOffset, fileLength - logicalOffset);
-                Marshal.WriteInt64(buffer, deviceOffsetOffset, logicalOffset);
+                WriteInt64Unaligned(buffer, contigBytesOffset, fileLength - logicalOffset);
+                WriteInt64Unaligned(buffer, deviceOffsetOffset, logicalOffset);
 
                 if (fcntl(fd, FLog2PhysExt, buffer) == -1)
                     return null;
 
-                long contiguousBytes = Marshal.ReadInt64(buffer, contigBytesOffset);
-                long deviceOffset = Marshal.ReadInt64(buffer, deviceOffsetOffset);
+                long contiguousBytes = ReadInt64Unaligned(buffer, contigBytesOffset);
+                long deviceOffset = ReadInt64Unaligned(buffer, deviceOffsetOffset);
                 if (contiguousBytes <= 0)
                     return null;
 
@@ -84,6 +84,37 @@ internal static class MacOsLog2Phys
         finally
         {
             Marshal.FreeHGlobal(buffer);
+        }
+    }
+
+    internal static long ReadInt64Unaligned(IntPtr buffer, int offset)
+    {
+        ulong value = 0;
+
+        for (int byteIndex = 0; byteIndex < sizeof(long); byteIndex++)
+        {
+            int nativeIndex = BitConverter.IsLittleEndian
+                ? byteIndex
+                : sizeof(long) - 1 - byteIndex;
+            value |= (ulong)Marshal.ReadByte(buffer, offset + nativeIndex) << (byteIndex * 8);
+        }
+
+        return unchecked((long)value);
+    }
+
+    internal static void WriteInt64Unaligned(IntPtr buffer, int offset, long value)
+    {
+        ulong bits = unchecked((ulong)value);
+
+        for (int byteIndex = 0; byteIndex < sizeof(long); byteIndex++)
+        {
+            int nativeIndex = BitConverter.IsLittleEndian
+                ? byteIndex
+                : sizeof(long) - 1 - byteIndex;
+            Marshal.WriteByte(
+                buffer,
+                offset + nativeIndex,
+                unchecked((byte)(bits >> (byteIndex * 8))));
         }
     }
 
